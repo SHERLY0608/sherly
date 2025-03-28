@@ -1,0 +1,374 @@
+//NS BAPELA 223402087
+
+{
+	"$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"VnetOne": {
+			"type": "string",
+			"metadata": {
+				"description": "The name of the Virtual Network to be created."
+			},
+			
+			"defaultValue": "ThreeTierVNet"
+		},
+
+		"VnetOneSubnetOne": {
+			"type": "string",
+			"metadata": {
+				"description": "Name of the first subnet"
+			},
+			"defaultValue" :"WebTierSubnet"
+		},
+		"VnetOneSubnetTwo": {
+			"type": "string",
+			"metadata": {
+				"description": "Name of the second subnet"
+			},
+			"defaultValue": "ApplicationTierSubnet"
+		},
+		"VnetOneSubnetThree": {
+			"type": "string",
+			"metadata": {
+				"description": "Name of the third subnet"
+			},
+			"defaultValue": "DatabaseTierSubnet"
+		},
+		
+    
+    "WebTierASGName": {
+      "type": "array",
+      "metadata": {
+        "description": "Name of web ASG"
+      },
+      "defaultValue": ["WebTierASG"]
+    },
+	"ApplicationTierASGName": {
+      "type": "array",
+      "metadata": {
+        "description": "Name of Application Tier"
+      },
+      "defaultValue": ["ApplicationTierASG"]
+    },
+	"DatabaseTierASGName": {
+      "type": "array",
+      "metadata": {
+        "description": "Name of Database Tier"
+      },
+      "defaultValue": ["DatabaseTierASG"]
+	},
+  "Network Security Group": {
+    "type": "string",
+    "metadata": {
+      "description": "Name of the network security group"
+    },
+    "defaultValue": "ThreeTierNSG"
+  },
+  "PublicIPAddressName": {
+    "type": "string",
+    "metadata": {
+      "description": "Name of the Public IP Address"
+    },
+    "defaultValue": "WebTierPublicIPAddress"
+  },
+  "LoadBalancesrName": {
+    "type": "string",
+    "metadata": {
+      "description": "Name of the LoadBalancer"
+    },
+    "defaultValue": "WebTierLoadBalancers"
+  },
+  "backendPoolName": {
+    "type": "string",
+    "metadata": {
+      "description": "Name of backendPool"
+    },
+    "defaultValue": "backendPool"
+  },
+  "HealthProbeHTTPName": {
+    "type": "string",
+    "metadata": {
+      "description": "Name of the Health Probe HTTP"
+    },
+    "defaultValue": "HealthProbeHTTP"
+  },
+  "HealthProbeHTTPSName": {
+    "type": "string",
+    "metadata": {
+      "description": "Name of the Health Probe HTTPS"
+    },
+    "defaultValue": "HealthProbeHTTPS"
+  },
+  "LoadBalancingRuleHTTP": {
+    "type": "string",
+    "metadata": {
+      "description": "Name of the Load Balancing Rule for port 80"
+    },
+    "defaultValue": "LoadBalancingRule"
+  },
+  "LoadBalancingRuleHTTPS": {
+    "type": "string",
+    "metadata": {
+      "description": "Name of the Load Balancing Rule for port 433"
+    },
+    "defaultValue": "LoadBalancingRuleHTTPS"
+  }
+    
+	},
+	"functions": [],
+	"variables": {
+		"VnetOne": "10.0.0.0/16",
+		"VnetOneSubnetOne": "10.0.1.0/24",
+		"VnetOneSubnetTwo": "10.0.2.0/24",
+		"VnetOneSubnetThree": "10.0.3.0/24"
+	},
+	 
+  
+
+	"resources": [
+		{
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2021-05-01",
+      "name": "[parameters('VnetOne')]",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+          "[variables('VnetOne')]"
+          ]
+        },
+
+        "subnets": [
+          {
+            "name": "[parameters('VnetOneSubnetOne')]",
+            "properties": {
+              "addressPrefix": "[variables('VnetOneSubnetOne')]"
+            }
+          },
+          {
+            "name": "[parameters('VnetOneSubnetTwo')]",
+            "properties": {
+              "addressPrefix": "[variables('VnetOneSubnetTwo')]"
+            }
+          },
+          {
+            "name": "[parameters('VnetOneSubnetThree')]",
+            "properties": {
+              "addressPrefix": "[variables('VnetOneSubnetThree')]"
+            }
+          }
+        ]
+      }
+    },
+
+	{
+
+      "type": "Microsoft.Network/applicationSecurityGroups",
+      "apiVersion": "2021-05-01",
+      "name": "[parameters('WebTierASGName')]",
+      "location": "[parameters('WebTierASGName')]",
+      "properties": {}
+		
+    
+    },
+
+    {
+      "type": "Microsoft.Network/applicationSecurityGroups",
+      "apiVersion": "2021-05-01",
+      "name": "[parameters('ApplicationTierASGName')]",
+      "location": "[parameters('ApplicationTierASGName')]",
+      "properties": {}
+    },
+	  
+  {
+      "type": "Microsoft.Network/applicationSecurityGroups",
+      "apiVersion": "2021-05-01",
+      "name": "[parameters('DatabaseTierASGName')]",
+      "location": "[parameters('DatabaseTierASGName')]",
+      "properties": {}
+  },
+      
+    {
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2021-05-01",
+      "name": "ThreeTierNSG",
+      "location": "[parameters('Network Security Group')]",
+      "properties": {
+        "securityRules": [
+          
+          {
+        "name": "nsgRuleOne",
+        "properties": {
+          "description": "Allow HTTP from the internet to Web Tier",
+          "protocol": "Tcp",
+          "sourcePortRange": "*",
+          "destinationPortRange": "80",
+          "sourceAddressPrefix": "*", 
+         "destinationAddressPrefix": "[parameters('Network Security Group')]",  
+          "access": "Allow",
+          "priority": 100,
+         "direction": "Inbound"
+           }
+          },
+
+          {
+            "name": "AllowHTTP",
+            "properties": {
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "80",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "VirtualNetwork",
+              "access": "Allow",
+              "priority": 100,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "AllowHTTPS",
+            "properties": {
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "443",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "VirtualNetwork",
+              "access": "Allow",
+              "priority": 110,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "AllowSQL",
+            "properties": {
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "1433",
+              "sourceAddressPrefix": "VirtualNetwork",
+              "destinationAddressPrefix": "VirtualNetwork",
+              "access": "Allow",
+              "priority": 120,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "DenyAllInbound",
+            "properties": {
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Deny",
+              "priority": 130,
+              "direction": "Inbound"
+            }
+          }
+        ]
+      }
+    },
+    {
+  "type": "Microsoft.Network/loadBalancers",
+  "apiVersion": "2021-05-01",
+  "name": "webTierLoadBalancer",
+  "location": "[parameters('LoadBalancesrName')]",
+  "properties": {
+    "frontendIPConfigurations": [
+      {
+        "name": "frontendIPConfig",
+        "properties": {
+          "publicIPAddress": {
+            "id": "[resourceId('Microsoft.Network/publicIPAddresses', 'webTierPublicIP')]"
+          }
+        }
+      }
+    ],
+    "backendAddressPools": [
+      {
+        "name": "[parameters('backendPoolName')]"
+      }
+    ],
+    "probes": [
+      {
+        "name": "[parameters('HealthProbeHTTPName')]",
+        "properties": {
+          "protocol": "Http",
+          "port": 80,
+          "requestPath": "/",
+          "intervalInSeconds": 5,
+          "numberOfProbes": 2
+        }
+      },
+      {
+        "name": "[parameters('HealthProbeHTTPSName')]",
+        "properties": {
+          "protocol": "Https",
+          "port": 443,
+          "requestPath": "/",
+          "intervalInSeconds": 5,
+          "numberOfProbes": 2
+        }
+      }
+    ],
+    "loadBalancingRules": [
+      {
+        "name": "[parameters('LoadBalancingRuleHTTP')]",
+        "properties": {
+          "frontendIPConfiguration": {
+            "id": "[resourceId('Microsoft.Network/loadBalancers/frontendIPConfigurations', 'webTierLoadBalancer/frontendIPConfig')]"
+          },
+          "backendAddressPool": {
+            "id": "[resourceId('Microsoft.Network/loadBalancers/backendAddressPools', 'webTierLoadBalancer/backendPool')]"
+          },
+          "probe": {
+            "id": "[resourceId('Microsoft.Network/loadBalancers/probes', 'webTierLoadBalancer/httpProbe')]"
+          },
+          "protocol": "Tcp",
+          "frontendPort": 80,
+          "backendPort": 80,
+          "enableFloatingIP": false,
+          "idleTimeoutInMinutes": 4,
+          "loadDistribution": "Default"
+        }
+      },
+      {
+        "name": "[parameters('LoadBalancingRuleHTTPS')]",
+        "properties": {
+          "frontendIPConfiguration": {
+            "id": "[resourceId('Microsoft.Network/loadBalancers/frontendIPConfigurations', 'webTierLoadBalancer/frontendIPConfig')]"
+          },
+          "backendAddressPool": {
+            "id": "[resourceId('Microsoft.Network/loadBalancers/backendAddressPools', 'webTierLoadBalancer/backendPool')]"
+          },
+          "probe": {
+            "id": "[resourceId('Microsoft.Network/loadBalancers/probes', 'webTierLoadBalancer/httpsProbe')]"
+          },
+          "protocol": "Tcp",
+          "frontendPort": 443,
+          "backendPort": 443,
+          "enableFloatingIP": false,
+          "idleTimeoutInMinutes": 4,
+          "loadDistribution": "Default"
+        }
+      },
+      {
+          "type": "Microsoft.Network/publicIPAddresses",
+          "apiVersion": "2021-05-01",
+          "name": "[parameters('PublicIPAddressName')]",
+          "location": "[parameters('PublicIPAddressName')]",
+          "properties": {
+            "publicIPAllocationMethod": "Static",
+            "idleTimeoutInMinutes": 4,
+            "dnsSettings": {
+              "domainNameLabel": "[toLower(parameters('PublicIPAddressName'))]"
+            }
+          }
+        }
+
+    ]
+  }
+}
+
+  
+  ],
+  "outputs": {}
+}
