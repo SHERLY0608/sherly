@@ -1,0 +1,176 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+        "parameters": {
+        "vnet1Name": {
+            "type": "string",
+            "metadata": {
+                "description": "description"
+            },
+            "defaultValue" : "CoreServiceVnet"
+            },
+
+        "vnet1subnetOneName": {
+            "type": "string",
+            "metadata": {
+                "description": "description"
+            },
+            "defaultValue": "SharedServiceSubnet"
+        },
+    
+        "vnet1subnetTwoName": {
+            "type": "string",
+            "metadata": {
+                "description": "description"
+            },
+            "defaultValue": "DatabaseSubnet"
+        },
+
+        "vnet2Name": {
+            "type": "string",
+            "metadata": {
+                "description": "description"
+            },
+            "defaultValue": "ManufacturingVnet"
+        },
+
+        "vnet2SubnetOneName": {
+            "type": "string",
+            "metadata": {
+                "description": "description"
+            },
+            "defaultValue": "SensorSubnet1"
+        },
+        "vnet2SubnetTwoName": {
+            "type": "string",
+            "metadata": {
+                "description": "description"
+            },
+            "defaultValue": "SensorSubnet2"
+        },
+        "vnetNSG": {
+            "type": "string",
+            "metadata": {
+                "description": "description"
+            },
+            "defaultValue": "NSG"
+        }
+        
+    },
+    "functions": [],
+    "variables": {
+        "vnet1Name": "10.20.0.0/16",
+        "vnet1subnetOneName": "10.20.10.0/24",
+        "vnet1subnetTwoName": "10.20.20.0/24",
+        "vnet2Name": "10.30.0.0/16",
+        "vnet2subnetOneName": "10.30.20.0/24",
+        "vnet2subnetTwoName": "10.30.21.0/24"
+
+    },
+    "resources": [
+        {
+            "name": "vnet1Name",
+            "type": "Microsoft.Network/virtualNetworks",
+            "apiVersion": "2024-03-01",
+            "location": "[resourceGroup().location]",
+            "tags": {
+                "displayName": "CoreServiceVnet"
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('vnet1Name'))]"
+            ],
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": "[ variables('Vnet1Name')
+                       
+                    ]"
+                },
+                "subnets": [
+                    {
+                        "name": "vnet1subnetOneName",
+                        "properties": {
+                            "addressPrefix": "[variables('vnet1subnetOneName')]",
+                            "networkSecurityGroup": {
+                                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('vnet1subnetOneName'))]"
+                            }
+                        }
+                    },
+                    {
+                        "name": "vnet1subnetTwoName",
+                        "properties": {
+                            "addressPrefix": "[variables('vnet1subnetTwoName')]",
+                            "networkSecurityGroup": {
+                                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('vnet1subnetTwoName'))]"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "vnet2Name",
+            "type": "Microsoft.Network/virtualNetworks",
+            "apiVersion": "2024-03-01",
+            "location": "[resourceGroup().location]",
+            "tags": {
+                "displayName": "ManufacturingVnet"
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('vnet2Name'))]"
+            ],
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "[variables('vnet2Name')]"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "vnet2subnet1",
+                        "properties": {
+                            "addressPrefix": "[variables('vnet2subnetOneName')]",
+                            "networkSecurityGroup": {
+                                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('vnet2SubnetOneName'))]"
+                            }
+                        }
+                    },
+                    {
+                        "name": "vnet2subnet2",
+                        "properties": {
+                            "addressPrefix": "[variables('vnet2subnetTwoName')]",
+                            "networkSecurityGroup": {
+                                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('vnet2SubnetTwoName'))]"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "[parameters('vnetNSG')]",
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "apiVersion": "2024-03-01",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "securityRules": [
+                    {
+                        "name": "AllowASG",
+                        "properties": {
+                            "description": "description",
+                            "protocol": "Tcp",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "80443",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 100,
+                            "direction": "Inbound"
+                        }
+                    }
+                ]
+            }
+        }
+        
+    ],
+    "outputs": {}
+}
